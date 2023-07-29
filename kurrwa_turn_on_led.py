@@ -53,6 +53,14 @@ def turn_on_led(some_led):
 def turn_off_led(some_led):
     GPIO.output(some_led, GPIO.LOW)
 
+def kurrwa_led_greet(some_led):
+    for i in [1,2,3]:
+        turn_on_led(some_led)
+        sd.sleep(100)
+        turn_off_led(some_led)
+        sd.sleep(200)
+
+
 turn_on_led(pin_led)
 sd.sleep(3)
 turn_off_led(pin_led)
@@ -102,15 +110,22 @@ while True:
 
   if keyword_index == 0:
       print("hej kurwa")
+      kurrwa_led_greet(pin_led)
       command_detected = False
       while not command_detected:
           audio_frame = get_next_audio_frame()
           command = recognize_command()
-          my_command = "turn on"
+          command_led_on = "turn on"
+          command_led_off = "turn off"
           if command:
-            if my_command in command:
+            if command_led_on in command:
                 print("Command detected")
                 turn_on_led(pin_led)
+                audio_frame = np.array([], dtype=np.int16)
+            elif command_led_off in command:
+                print("Command detected")
+                turn_off_led(pin_led)
+                audio_frame = np.array([], dtype=np.int16)
 
 
 
