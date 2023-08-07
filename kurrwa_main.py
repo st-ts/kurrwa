@@ -1,5 +1,6 @@
-# Simple test program which listens to a wake word
-# and after detecting it turns on LED
+# This code listens to the wake word, and maybe later I will make a 
+# module which processes the commands and executes them
+
 
 import RPi.GPIO as GPIO
 import time, datetime
@@ -10,8 +11,13 @@ import pyaudio
 import speech_recognition as sr
 import requests
 import pyttsx3
+import pygame
 from flux_led import WifiLedBulb
 from bs4 import BeautifulSoup
+
+# Specify paths to audios
+ja_pierdole = 'sounds/ja_pierdole.mp3' 
+jake_bydlo = 'sounds/jake_bydlo_jebane.mp3'
 
 # Set the pins
 GPIO.setmode(GPIO.BCM)
@@ -19,14 +25,11 @@ pin_led = 14
 GPIO.setup(pin_led, GPIO.OUT)
 
 
-
-
-# Set the wake word to smth for now
+# Set the wake word to "Hej kurwa"
 pico_key_path = '/home/stetsenko/macode/pico_pico.txt'
 with open(pico_key_path, "r") as file:
     pico_key = file.read()
-print('hey1')
-# wake_word_path = "/home/stetsenko/.local/lib/python3.9/site-packages/pvporcupine/resources/keyword_files/raspberry-pi/porcupine_raspberry-pi.ppn"
+print('hej')
 model_path_pl = "/home/stetsenko/.local/lib/python3.9/site-packages/pvporcupine/lib/common/porcupine_params_pl.pv"
 
 porcupine = porcu.create(keywords=['hej-kurwa'], access_key = pico_key, model_path = model_path_pl)
@@ -46,6 +49,17 @@ stream = audio_interface.open(
     frames_per_buffer=frame_length,
     input=True
 )
+
+def play_sound(sound_path, volume=1):
+    # Initialise, load, play and exit
+    pygame.mixer.init()
+    pygame.mixer.music.load(sound_path)
+    pygame.mixer.music.set_volume(volume)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        continue
+    pygame.mixer.quit()
+    
 
 def get_next_audio_frame():
     audio_frame = stream.read(frame_length)
@@ -156,7 +170,7 @@ def speak_funny(text):
 
     engine.say(text)
     engine.runAndWait()
-
+listen_time_sec = 30
 
 
 while True:
@@ -165,10 +179,19 @@ while True:
 
   if keyword_index == 0:
       print("hej kurwa")
-      speak_polish("Ja pierdolę")
+      # Set the time after which the listening stops
+      stop_listen_time = datetime.datetime.now() + \
+                         datetime.timedelta(seconds=listen_time_sec)
+      play_sound(ja_pierdole,0.3)
+      
       kurrwa_led_greet(pin_led)
       command_detected = False
       while not command_detected:
+          # Check if the program was listening for too long
+          if datetime.datetime.now() >= stop_listen_time:
+              play_sound(jake_bydlo,0.4)
+              break
+          
           audio_frame = get_next_audio_frame()
           command = recognize_command()
           command_led_on = "turn on"
@@ -177,6 +200,8 @@ while True:
           stop_listen = "goodbye"
           location = "07029"
           if command:
+            stop_listen_time = datetime.datetime.now() + \
+                         datetime.timedelta(seconds=listen_time_sec)
             if command_led_on in command:
                 print("Command detected")
                 turn_on_led(pin_led)
@@ -197,8 +222,8 @@ while True:
                     print("Failed to fetch weather data.")
             elif stop_listen in command:
                 command_detected = True
-                speak_polish("jyake bydło jebane")
-            elif "shine" in command:
+                play_sound(jake_bydlo,0.4)
+            elif "light" in command:
                 control_bulbs(command)
             elif "number" in command:
                 speak_funny("1 2 3 4 5 6 7 8 9 10 20 30 40 50 11 12 13 14 15 16 17 18 19")
