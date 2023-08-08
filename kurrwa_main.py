@@ -96,6 +96,8 @@ def control_bulbs(command):
         bulb.setWarmWhite(100)
     elif "green" in command:
         bulb.setRgb(0,1,0)
+    elif "of" in command:
+        bulb.turnOff()
     #flux_led bulb_ip -w 75 -1
 
 
@@ -182,14 +184,14 @@ while True:
       # Set the time after which the listening stops
       stop_listen_time = datetime.datetime.now() + \
                          datetime.timedelta(seconds=listen_time_sec)
-      play_sound(ja_pierdole,0.3)
+      play_sound(ja_pierdole,0.2)
       
       kurrwa_led_greet(pin_led)
       command_detected = False
       while not command_detected:
           # Check if the program was listening for too long
           if datetime.datetime.now() >= stop_listen_time:
-              play_sound(jake_bydlo,0.4)
+              play_sound(jake_bydlo,0.2)
               break
           
           audio_frame = get_next_audio_frame()
@@ -222,7 +224,7 @@ while True:
                     print("Failed to fetch weather data.")
             elif stop_listen in command:
                 command_detected = True
-                play_sound(jake_bydlo,0.4)
+                play_sound(jake_bydlo,0.2)
             elif "light" in command:
                 control_bulbs(command)
             elif "number" in command:
