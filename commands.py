@@ -56,8 +56,9 @@ def identify_actions(command_text):
     # all the actions related to weather (different words can trigger this)
     weather_words = ["temperature", "uv index", "weather", "rain"]
     for word in weather_words:
-        if word in command: 
-            implement_weather(command)
+        if word in command_text: 
+            print("gonna get you the weather")
+            implement_weather(command_text)
             command_identified = True
             break
         
@@ -158,6 +159,18 @@ def get_current_temperature(location):
         return temperature
     else:
         return None
+        
+def implement_weather(command):
+    location = "07029"
+    print("Fetching the weather data")
+    temperature = get_current_temperature(location)
+    if temperature:
+        temp_info = f"The current temperature is {temperature}C."
+        print(temp_info)
+        # speak(temp_info)
+        speak_funny(temp_info)
+    else:
+        print("Failed to fetch weather data.")
 
 # Function to recognize speech after the wake word
 def recognize_command():
