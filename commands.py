@@ -1,5 +1,4 @@
-# This code listens to the wake word, and maybe later I will make a 
-# module which processes the commands and executes them
+# Thid module stores functions related to different commands
 
 
 import RPi.GPIO as GPIO
@@ -12,6 +11,7 @@ import speech_recognition as sr
 import requests
 import pyttsx3
 import pygame
+
 from flux_led import WifiLedBulb
 from bs4 import BeautifulSoup
 
@@ -24,15 +24,6 @@ GPIO.setmode(GPIO.BCM)
 pin_led = 14
 GPIO.setup(pin_led, GPIO.OUT)
 
-
-# Set the wake word to "Hej kurwa"
-pico_key_path = '/home/stetsenko/macode/pico_pico.txt'
-with open(pico_key_path, "r") as file:
-    pico_key = file.read()
-print('hej')
-model_path_pl = "/home/stetsenko/.local/lib/python3.9/site-packages/pvporcupine/lib/common/porcupine_params_pl.pv"
-
-porcupine = porcu.create(keywords=['hej-kurwa'], access_key = pico_key, model_path = model_path_pl)
 
 # Define audio settings
 sample_rate = 16000  # Sample rate in Hz
@@ -50,6 +41,43 @@ stream = audio_interface.open(
     input=True
 )
 
+# Main if {word} function for idenifing which actions should be implemented 
+# based on text of command given
+
+def identify_actions(command_text):
+    # if at least 1 command idenified, don't start mocking
+    command_identified = False
+    
+    # all the actions related to light 
+    if "light" in command_text:
+        implement_light(command_text)
+        command_identified = True
+    
+    # all the actions related to weather (different words can trigger this)
+    weather_words = ["temperature", "uv index", "weather", "rain"]
+    for word in weather_words:
+        if word in command: 
+            implement_weather(command)
+            command_identified = True
+            break
+        
+    # to add later, spotify
+    music_words = ["spotify", "play", "music", "song"]
+    for word in music_words:
+        if word in command_text:
+            implement_music(command_text)
+            command_identified = True
+            break
+            
+    # add later: integration with tasks
+    
+    # add later: integration with calendar (maybe 1 function with tasks)
+    
+    # add later: chat with different characters
+            
+    
+    
+# not for music, but for playing pre-made recordings of responces
 def play_sound(sound_path, volume=1):
     # Initialise, load, play and exit
     pygame.mixer.init()
@@ -65,26 +93,37 @@ def get_next_audio_frame():
     audio_frame = stream.read(frame_length)
     return np.frombuffer(audio_frame, dtype=np.int16)
 
+# for indicator leds
+# set brightness
+def set_brightness_led(led_pin, brightness):
+    pass 
+
+# turn on
 def turn_on_led(some_led):
     GPIO.output(some_led, GPIO.HIGH)
 
+# turn off
 def turn_off_led(some_led):
     GPIO.output(some_led, GPIO.LOW)
 
-def kurrwa_led_greet(some_led):
-    turn_on_led(some_led)
-    sd.sleep(100)
-    turn_off_led(some_led)
-    sd.sleep(200)
 
 
-def control_bulbs(command):
-    speak("Let the bulb shine")
-    if "bed" in command:
-        bulb_ip = '192.168.88.23'
-    else:
-        print("default is bed")
-        bulb_ip = '192.168.88.23'
+def implement_light(command):
+    # inform that the command went through
+    speak("Setting the light")
+    
+    bulbs = {"bed": "192.168.88.23", "mirror": 1, "ceiling": None}
+    
+    # determine the scope of the bulbs used
+    # if a certain bulb is mentioned, it will be the only one set
+    for bulb in bulb_ips.keys():
+        if bulb in command_text:
+            bulb_ip = bulb_ips(bulb)
+        else:
+            print("default is bed")
+            bulb_ip = '192.168.88.23'
+            
+            
     
     
     bulb = WifiLedBulb(bulb_ip)
@@ -172,68 +211,4 @@ def speak_funny(text):
 
     engine.say(text)
     engine.runAndWait()
-listen_time_sec = 30
 
-
-while True:
-  audio_frame = get_next_audio_frame()
-  keyword_index = porcupine.process(audio_frame)
-
-  if keyword_index == 0:
-      print("hej kurwa")
-      # Set the time after which the listening stops
-      stop_listen_time = datetime.datetime.now() + \
-                         datetime.timedelta(seconds=listen_time_sec)
-      play_sound(ja_pierdole,0.2)
-      
-      kurrwa_led_greet(pin_led)
-      command_detected = False
-      while not command_detected:
-          # Check if the program was listening for too long
-          if datetime.datetime.now() >= stop_listen_time:
-              play_sound(jake_bydlo,0.2)
-              break
-          
-          audio_frame = get_next_audio_frame()
-          command = recognize_command()
-          command_led_on = "turn on"
-          command_led_off = "turn off"
-          go_weather = "weather"
-          stop_listen = "goodbye"
-          location = "07029"
-          if command:
-            stop_listen_time = datetime.datetime.now() + \
-                         datetime.timedelta(seconds=listen_time_sec)
-            if command_led_on in command:
-                print("Command detected")
-                turn_on_led(pin_led)
-                audio_frame = np.array([], dtype=np.int16)
-            elif command_led_off in command:
-                print("Command detected")
-                turn_off_led(pin_led)
-                audio_frame = np.array([], dtype=np.int16)
-            elif go_weather in command:
-                print("Fetching the weather data")
-                temperature = get_current_temperature(location)
-                if temperature:
-                    temp_info = f"The current temperature is {temperature}C."
-                    print(temp_info)
-                    # speak(temp_info)
-                    speak_funny(temp_info)
-                else:
-                    print("Failed to fetch weather data.")
-            elif stop_listen in command:
-                command_detected = True
-                play_sound(jake_bydlo,0.2)
-            elif "light" in command:
-                control_bulbs(command)
-            elif "number" in command:
-                speak_funny("1 2 3 4 5 6 7 8 9 10 20 30 40 50 11 12 13 14 15 16 17 18 19")
-            else:
-                speak_funny(command)
-                
-
-
-
-
-porcupine.delete()
