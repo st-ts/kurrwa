@@ -80,47 +80,6 @@ def kurrwa_led_greet(some_led):
     sd.sleep(200)
 
 
-def control_bulbs(command):
-    speak("Let the bulb shine")
-    if "bed" in command:
-        bulb_ip = '192.168.88.23'
-    else:
-        print("default is bed")
-        bulb_ip = '192.168.88.23'
-    
-    
-    bulb = WifiLedBulb(bulb_ip)
-    
-    # Implement an action based on the command
-    if "red" in command:
-        bulb.setRgb(1,0,0)
-    elif "warm" in command:
-        bulb.setWarmWhite(100)
-    elif "green" in command:
-        bulb.setRgb(0,1,0)
-    elif "of" in command:
-        bulb.turnOff()
-    #flux_led bulb_ip -w 75 -1
-
-
-
-
-turn_on_led(pin_led)
-sd.sleep(3)
-turn_off_led(pin_led)
-
-# Function to fetch the current temperature
-def get_current_temperature(location):
-    url = f"https://weather.com/en-IN/weather/today/l/{location}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.content, "html.parser")
-        temperature = soup.find("span", {"data-testid": "TemperatureValue"}).text
-        return temperature
-    else:
-        return None
 
 # Function to recognize speech after the wake word
 def recognize_speech():
@@ -139,7 +98,7 @@ def recognize_speech():
         return ' '
 
 
-# Function to speak out the given text
+# Functions to speak out the given text
 def speak(text):
     engine = pyttsx3.init()
     engine.say(text)
@@ -174,9 +133,10 @@ def speak_funny(text):
 
     engine.say(text)
     engine.runAndWait()
-listen_time_sec = 30
+listen_time_sec = 10
 
 
+# Main loop monitoring the wake word and identifying the speech after it
 while True:
   audio_frame = get_next_audio_frame()
   keyword_index = porcupine.process(audio_frame)
@@ -184,17 +144,21 @@ while True:
   if keyword_index == 0:
       print("hej kurwa")
       # Set the time after which the listening stops
-      stop_listen_time = datetime.datetime.now() + \
-                         datetime.timedelta(seconds=listen_time_sec)
+      time_now = datetime.datetime.now() 
+      stop_listen_time = time_now + datetime.timedelta(seconds=listen_time_sec)
+      print(stop_listen_time)
       play_sound(ja_pierdole,0.2)
       
       kurrwa_led_greet(pin_led)
       command_detected = False
       while not command_detected:
           # Check if the program was listening for too long
-          if datetime.datetime.now() >= stop_listen_time:
+          time_now = datetime.datetime.now() 
+          print(time_now)
+          if time_now > stop_listen_time:
               play_sound(jake_bydlo,0.2)
               break
+          
           
           audio_frame = get_next_audio_frame()
           user_speech = recognize_speech()
@@ -204,8 +168,7 @@ while True:
           stop_listen = "goodbye"
           location = "07029"
           if user_speech:
-            stop_listen_time = datetime.datetime.now() + \
-                         datetime.timedelta(seconds=listen_time_sec)
+            stop_listen_time = datetime.datetime.now() + datetime.timedelta(seconds=listen_time_sec)
             
             execute_command = threading.Thread(target=commands.identify_actions,
                               args=(user_speech,))
