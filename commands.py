@@ -7,10 +7,12 @@ import pvporcupine as porcu
 import sounddevice as sd
 import numpy as np
 import pyaudio
+import re
 import speech_recognition as sr
 import requests
 import pyttsx3
 import pygame
+import webcolors
 
 from flux_led import WifiLedBulb
 from bs4 import BeautifulSoup
@@ -42,7 +44,7 @@ stream = audio_interface.open(
 )
 
 # Main if {word} function for idenifing which actions should be implemented 
-# based on text of command given
+# based on the text of command given
 
 def identify_actions(command_text):
     # if at least 1 command idenified, don't start mocking
@@ -61,7 +63,12 @@ def identify_actions(command_text):
             implement_weather(command_text)
             command_identified = True
             break
-        
+    
+    # Setting a timer
+    if "timer" in command_text:
+        set_timer(command_text)
+        command_identified = True
+    
     # to add later, spotify
     music_words = ["spotify", "play", "music", "song"]
     for word in music_words:
@@ -107,40 +114,71 @@ def turn_on_led(some_led):
 def turn_off_led(some_led):
     GPIO.output(some_led, GPIO.LOW)
 
+def set_timer(command):
+    match = re.search(r'\d+', command)
+    if match:
+        minutes = int(match.group())
+        speak_funny("Timer for " + str(minutes) + " minutes starts")
+        timer_start = datetime.datetime.now()
+        time_over = False
+        while not time_over:
+            time_now = datetime.datetime.now()
+            if time_now > timer_start + datetime.timedelta(seconds=minutes*60):
+                time_over = True
+
+        speak_funny("time is over")
+        for i in [0,0,0]:
+            speak("beep beep beep")
+            time.sleep(0.5)
+    else:
+        speak_funny("You did not say for how long")
 
 
+#
 def implement_light(command):
     # inform that the command went through
-    speak("Setting the light")
+    speak_funny("Setting the light")
     
-    bulbs = {"bed": "192.168.88.23", "mirror": 1, "ceiling": None}
+    bulb_ips = {"bed": "192.168.88.23", "ceiling": None}
     
     # determine the scope of the bulbs used
     # if a certain bulb is mentioned, it will be the only one set
     for bulb in bulb_ips.keys():
-        if bulb in command_text:
+        if bulb in command:
             bulb_ip = bulb_ips(bulb)
+            break
         else:
             print("default is bed")
             bulb_ip = '192.168.88.23'
             
-            
-    
     
     bulb = WifiLedBulb(bulb_ip)
     
-    # Implement an action based on the command
-    if "red" in command:
-        bulb.setRgb(1,0,0)
+    # Determine if within the command any color is mentioned
+    command_words = command.split(" ")
+    
+    if "of" in command:
+        bulb.turnOff()
     elif "warm" in command:
         bulb.setWarmWhite(100)
-    elif "green" in command:
-        bulb.setRgb(0,1,0)
-    elif "of" in command:
-        bulb.turnOff()
-    #flux_led bulb_ip -w 75 -1
+    else:
+        for word in command_words:
+            if is_word_color(word):
+                [r,g,b] = webcolors.name_to_rgb(word)
+                bulb.setRgb(r,g,b)
+                break
+                
+    
 
 
+
+# Check if some word is a color
+def is_word_color(word):
+    try:
+        webcolors.name_to_rgb(word)
+        return True
+    except ValueError:
+        return False
 
 
 turn_on_led(pin_led)
@@ -160,9 +198,19 @@ def get_current_temperature(location):
     else:
         return None
         
+        
+# The weather related
 def implement_weather(command):
-    location = "07029"
     print("Fetching the weather data")
+    
+    # Check if location is mentioned ADD later
+    if "in" in command:
+        command_words = command.split(" ")
+    else:
+        location = "07029"
+        
+        
+    
     temperature = get_current_temperature(location)
     if temperature:
         temp_info = f"The current temperature is {temperature}C."
@@ -171,22 +219,6 @@ def implement_weather(command):
         speak_funny(temp_info)
     else:
         print("Failed to fetch weather data.")
-
-# Function to recognize speech after the wake word
-def recognize_command():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Say something...")
-        audio = recognizer.listen(source)
-
-    try:
-        recognized_text = recognizer.recognize_google(audio, language="en-US")
-        print(recognized_text)
-        return recognized_text
-
-    except sr.UnknownValueError:
-        print("Speech could not be recognized.")
-        return ' '
 
 
 # Function to speak out the given text
