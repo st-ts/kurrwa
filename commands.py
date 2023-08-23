@@ -47,11 +47,12 @@ stream = audio_interface.open(
 # based on the text of command given
 
 def identify_actions(command_text):
+    command_text = command_text.lower()
     # if at least 1 command idenified, don't start mocking
     command_identified = False
     
     # all the actions related to light 
-    if "light" in command_text:
+    if "light" in command_text:fghfhggghjjhg
         implement_light(command_text)
         command_identified = True
     
@@ -86,7 +87,7 @@ def identify_actions(command_text):
     
     
 # not for music, but for playing pre-made recordings of responces
-def play_sound(sound_path, volume=1):
+def play_sound(sound_path, volume=0.3):
     # Initialise, load, play and exit
     pygame.mixer.init()
     pygame.mixer.music.load(sound_path)
@@ -138,35 +139,56 @@ def set_timer(command):
 def implement_light(command):
     # inform that the command went through
     speak_funny("Setting the light")
-    
-    bulb_ips = {"bed": "192.168.88.23", "ceiling": None}
+    bed_ip = "192.168.88.23";
+    top_door_ip = "192.168.88.13";
+    top_paint_ip = "192.168.88.14";
+    top_wind_ip = "192.168.88.16";
+    top_book_ip = "192.168.88.15";
+    bulb_ips = {"bed": [bed_ip], "door": [top_door_ip],
+                "paint": [top_paint_ip], "windor": [top_wind_ip],
+                "book": [top_book_ip], "ceiling": 
+                    [top_door_ip,top_paint_ip,top_wind_ip,top_book_ip],
+                    "all": [top_door_ip,top_paint_ip,top_wind_ip,top_book_ip,bed_ip]}
     
     # determine the scope of the bulbs used
-    # if a certain bulb is mentioned, it will be the only one set
+    # if a certain bulb is mentioned, it will be added tp the scope
+    # default is all the lights
+    bulbs_to_set = []
     for bulb in bulb_ips.keys():
         if bulb in command:
-            bulb_ip = bulb_ips(bulb)
+            bulbs_to_set.extend(bulb_ips[bulb])
             break
         else:
-            print("default is bed")
-            bulb_ip = '192.168.88.23'
             
-    
-    bulb = WifiLedBulb(bulb_ip)
+    if bulbs_to_set == []:
+        print("default is all")
+        bulbs_to_set.extend(bulb_ips["all"])
+            
+
     
     # Determine if within the command any color is mentioned
     command_words = command.split(" ")
-    
-    if "of" in command:
-        bulb.turnOff()
-    elif "warm" in command:
-        bulb.setWarmWhite(100)
-    else:
-        for word in command_words:
-            if is_word_color(word):
-                [r,g,b] = webcolors.name_to_rgb(word)
-                bulb.setRgb(r,g,b)
-                break
+    for bulb_ip in bulbs_to_set:
+        bulb = WifiLedBulb(bulb_ip)
+        if "of" in command:
+            bulb.turnOff()
+        elif "warm" in command:
+            bulb.setWarmWhite(100)
+        elif "on" in command:
+            bulb.turnOn()
+        else:
+            for word in command_words:
+                if is_word_color(word):
+                    [r,g,b] = webcolors.name_to_rgb(word)
+                    bulb.setRgb(r,g,b)
+                    break
+                    
+        # Change light intensity
+        if "dark" in command:
+            bulb.set_levels(brightness=30)
+        elif "bright" in command:
+            bulb.set_levels(brightness=100)
+            
                 
     
 
