@@ -95,7 +95,7 @@ def recognize_speech():
 
     except sr.UnknownValueError:
         print("Speech could not be recognized.")
-        return ' '
+        return None
 
 
 # Functions to speak out the given text
@@ -126,14 +126,13 @@ def speak_funny(text):
         # Set the selected voice
         engine.setProperty('voice', voices[funny_voice_index].id)
 
-        # Set other voice properties for a funny effect (if available)
-        # For example, you can adjust the pitch and rate of speech
+        # Set other voice properties for a funny effect like pitch and rate of speech
         engine.setProperty('rate', 95)  # Slower speech rate
         engine.setProperty('pitch', 10)  # Higher pitch for a funny voice
 
     engine.say(text)
     engine.runAndWait()
-listen_time_sec = 10
+listen_time_sec = 15
 
 
 # Main loop monitoring the wake word and identifying the speech after it
@@ -146,34 +145,39 @@ while True:
       # Set the time after which the listening stops
       time_now = datetime.datetime.now() 
       stop_listen_time = time_now + datetime.timedelta(seconds=listen_time_sec)
-      print(stop_listen_time)
-      play_sound(ja_pierdole,0.2)
+      play_sound(ja_pierdole,0.7)
       
       kurrwa_led_greet(pin_led)
-      command_detected = False
-      while not command_detected:
+      listen_for_command = True
+      while listen_for_command:
+          
           # Check if the program was listening for too long
           time_now = datetime.datetime.now() 
-          print(time_now)
-          if time_now > stop_listen_time:
-              play_sound(jake_bydlo,0.2)
-              break
-          
-          
-          audio_frame = get_next_audio_frame()
-          user_speech = recognize_speech()
-          command_led_on = "turn on"
-          command_led_off = "turn off"
-          go_weather = "weather"
-          stop_listen = "goodbye"
-          location = "07029"
-          if user_speech:
-            stop_listen_time = datetime.datetime.now() + datetime.timedelta(seconds=listen_time_sec)
-            
-            execute_command = threading.Thread(target=commands.identify_actions,
-                              args=(user_speech,))
-            execute_command.start()
-            
+          if stop_listen_time < time_now:
+              play_sound(jake_bydlo,0.7)
+              listen_for_command = False
+              print("stopped listening")
+          else:
+              # Get audiodata and send it to the speech recognizer
+              audio_frame = get_next_audio_frame()
+              user_speech = recognize_speech()
+              
+              # If speech is detected, reset the listen timer and pass the 
+              # command to the commands module using a thread for parallel 
+              if user_speech:
+                  
+                      
+                  stop_listen_time = datetime.datetime.now() + datetime.timedelta(seconds=listen_time_sec)
+                
+                  execute_command = threading.Thread(target=commands.identify_actions,
+                                  args=(user_speech,))
+                  execute_command.start()
+                  
+                  if "goodbye" in user_speech:
+                      play_sound(jake_bydlo,0.7)
+                      listen_for_command = False
+                      print("stopped listening")
+                      break
 
 
 
