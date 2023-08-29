@@ -16,4 +16,6 @@ Plan to make:
 10. Create "scenes" presets (light+music) and write a code to generate scenes from descriptions
 11. Integrate ChatGPT
 12. Make different characters: Gandalf with AI-generated voice, manner of speech
+13. (Hardware) connect my mirror lights
+14. Make a new wake word for Gandalf "My dearest friend" - done
     
