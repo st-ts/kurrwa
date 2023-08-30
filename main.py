@@ -20,6 +20,8 @@ from bs4 import BeautifulSoup
 # Specify paths to audios
 ja_pierdole = 'sounds/ja_pierdole.mp3' 
 jake_bydlo = 'sounds/jake_bydlo_jebane.mp3'
+gandalf_greet = 'sounds/gandalf-im-trying-to-help-you.mp3'
+gandalf_bye = 'sounds/gandalf-things-are-now-in-motion-that-cannot-be-undone.mp3'
 
 # Set the pins
 GPIO.setmode(GPIO.BCM)
@@ -35,6 +37,7 @@ print('hej')
 model_path_pl = "/home/stetsenko/.local/lib/python3.9/site-packages/pvporcupine/lib/common/porcupine_params_pl.pv"
 
 porcupine = porcu.create(keywords=['hej-kurwa'], access_key = pico_key, model_path = model_path_pl)
+gandalf_model = porcu.create(keywords=['my-dearest-friend'], access_key = pico_key)
 
 # Define audio settings
 sample_rate = 16000  # Sample rate in Hz
@@ -137,15 +140,27 @@ listen_time_sec = 15
 
 # Main loop monitoring the wake word and identifying the speech after it
 while True:
-  audio_frame = get_next_audio_frame()
-  keyword_index = porcupine.process(audio_frame)
-
-  if keyword_index == 0:
-      print("hej kurwa")
+    audio_frame = get_next_audio_frame()
+    kurrwa_index = porcupine.process(audio_frame)
+    gandalf_index = gandalf_model.process(audio_frame)
+    start_listen = False
+    
+    if kurrwa_index == 0:
+        print("hej kurwa")
+        play_sound(ja_pierdole,0.7)
+        assitant_character = "kurrwa"
+        start_listen = True
+    elif gandalf_index == 0:
+        print("Gandalf awoken")
+        play_sound(gandalf_greet, 0.7)
+        assitant_character = "gandalf"
+        start_listen = True
+        
+    if start_listen:
       # Set the time after which the listening stops
       time_now = datetime.datetime.now() 
       stop_listen_time = time_now + datetime.timedelta(seconds=listen_time_sec)
-      play_sound(ja_pierdole,0.7)
+      
       
       kurrwa_led_greet(pin_led)
       listen_for_command = True
@@ -154,7 +169,10 @@ while True:
           # Check if the program was listening for too long
           time_now = datetime.datetime.now() 
           if stop_listen_time < time_now:
-              play_sound(jake_bydlo,0.7)
+              if assitant_character == "kurrwa":
+                  play_sound(jake_bydlo,0.7)
+              else:
+                  play_sound(gandalf_bye,0.7)
               listen_for_command = False
               print("stopped listening")
           else:
@@ -174,7 +192,10 @@ while True:
                   execute_command.start()
                   
                   if "goodbye" in user_speech:
-                      play_sound(jake_bydlo,0.7)
+                      if assitant_character == "kurrwa":
+                        play_sound(jake_bydlo,0.7)
+                      else:
+                        play_sound(gandalf_bye,0.7)
                       listen_for_command = False
                       print("stopped listening")
                       break
