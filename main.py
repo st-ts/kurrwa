@@ -147,12 +147,12 @@ while True:
     
     if kurrwa_index == 0:
         print("hej kurwa")
-        play_sound(ja_pierdole,0.7)
+        play_sound(ja_pierdole,1)
         assitant_character = "kurrwa"
         start_listen = True
     elif gandalf_index == 0:
         print("Gandalf awoken")
-        play_sound(gandalf_greet, 0.7)
+        play_sound(gandalf_greet, 1)
         assitant_character = "gandalf"
         start_listen = True
         
@@ -170,9 +170,9 @@ while True:
           time_now = datetime.datetime.now() 
           if stop_listen_time < time_now:
               if assitant_character == "kurrwa":
-                  play_sound(jake_bydlo,0.7)
+                  play_sound(jake_bydlo,1)
               else:
-                  play_sound(gandalf_bye,0.7)
+                  play_sound(gandalf_bye,1)
               listen_for_command = False
               print("stopped listening")
           else:
