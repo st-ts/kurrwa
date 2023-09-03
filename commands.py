@@ -13,6 +13,8 @@ import requests
 import pyttsx3
 import pygame
 import webcolors
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 from flux_led import WifiLedBulb
 from bs4 import BeautifulSoup
@@ -52,7 +54,7 @@ def identify_actions(command_text):
     command_identified = False
     
     # all the actions related to light 
-    if "light" in command_text:fghfhggghjjhg
+    if "light" in command_text:
         implement_light(command_text)
         command_identified = True
     
@@ -74,7 +76,7 @@ def identify_actions(command_text):
     music_words = ["spotify", "play", "music", "song"]
     for word in music_words:
         if word in command_text:
-            implement_music(command_text)
+            play_spotify(command_text)
             command_identified = True
             break
             
@@ -157,8 +159,7 @@ def implement_light(command):
     for bulb in bulb_ips.keys():
         if bulb in command:
             bulbs_to_set.extend(bulb_ips[bulb])
-            break
-        else:
+
             
     if bulbs_to_set == []:
         print("default is all")
@@ -203,9 +204,64 @@ def is_word_color(word):
         return False
 
 
-turn_on_led(pin_led)
-sd.sleep(3)
-turn_off_led(pin_led)
+def play_spotify(command):
+    # Set the Spotify credentials and redirect URI
+    client_id_path = '/home/stetsenko/macode/spotify_client.txt'
+    client_secret_path = '/home/stetsenko/macode/spotify_secret.txt'
+    redirect_uri = 'http://localhost:8888/callback'
+    with open(client_id_path, "r") as file:
+        client_id = file.read()
+    with open(client_secret_path, "r") as file:
+        client_secret = file.read()
+
+        
+    
+    # Initialize Spotify authentication to scan for devices
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret, 
+    redirect_uri, scope='user-read-playback-state'))
+    # Get the list of available devices
+    devices = sp.devices()
+    
+    active_device_id = None
+    
+    for device in devices['devices']:
+        print(device)
+        if device['is_active']:
+            active_device_id = device['id']
+            #break
+    
+    # Check if an active device was found
+    if active_device_id:
+        pass
+        # Use active_device_id in your API requests
+    else:
+        print("No active device found.")
+        return None
+    
+        
+    if "work" in command:
+        context_uri = 'spotify:playlist:2hb0LUnhf0WE8C0aNnpO0x'
+        uris = None
+        
+    elif "lullaby" in command:
+        uris = ['spotify:track:7IT53mbDUqbEZUTbuHpuJS']
+        context_uri = None
+    else:
+        uris = None
+        context_uri = None
+        
+        
+    # Initialize Spotify authentication to play
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id, client_secret,
+        redirect_uri, scope='user-modify-playback-state', 
+        cache_path='/home/stetsenko/macode/kurrwa/.cache'))
+
+
+    sp.start_playback(context_uri=context_uri,uris=uris,
+        device_id=active_device_id)
+
+
+
 
 # Function to fetch the current temperature
 def get_current_temperature(location):
