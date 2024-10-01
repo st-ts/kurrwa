@@ -6,7 +6,7 @@ I'm having a lot of fun doing this project.
 Plan to make:
 1. Use porcupine lib for the wake word - done
 2. Write logic for a simple command like turn on the light - done
-3. Integrate Spotify
+3. Integrate Spotify - done 
 4. Troubleshoot the wake word / speech recognition problems
 5. Write a set of commands for led bulbs - in progress
 6. //add hardware: relays for non-smart appliances
